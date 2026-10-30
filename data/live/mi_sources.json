@@ -1,0 +1,13 @@
+{
+  "_format": "county -> {\"clarity\": <eid or any results.enr.clarityelections.com/MI/<County>/<eid>/... URL>} or {\"washtenaw\": <index.jsp URL>}; {\"skip\": true} or an empty object leaves a county out. Read by midterms.live.feeds_mi.mi().",
+  "_checked": "2026-10-30: all five 2026 ids below were live on Clarity / ewashtenaw with zero votes and election date 11/3/2026.",
+  "counties": {
+    "Oakland": {"clarity": 127284, "_where": "oakgov.info/results redirects here"},
+    "Macomb": {"clarity": 127293},
+    "Genesee": {"clarity": 127354},
+    "Washtenaw": {"washtenaw": "https://electionresults.ewashtenaw.org/electionreporting/nov2026/index.jsp"},
+    "Ottawa": {"clarity": 127391, "_where": "listed in Clarity's MI/Ottawa/elections.json"},
+    "Wayne": {"skip": true, "_why": "waynecountymi.gov returns an Akamai 403 to non-browser clients; no Clarity site"},
+    "Kent": {"skip": true, "_why": "kentcountymi.gov / accesskent.com return a Cloudflare block; no Clarity site"}
+  }
+}

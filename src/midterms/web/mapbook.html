@@ -1,0 +1,189 @@
+<meta charset="utf-8">
+<title>2026 Midterms Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: an election-desk sheet. Chamber odds up top, then one big map with the race
+   detail beside it, then where we disagree with markets, then 2025. */
+:root {
+  --bg: #f5f4f0; --paper: #fcfbf8; --ink: #15171a; --ink-2: #4c4f55; --ink-3: #85878c; --rule: #dedbd3;
+  --dem: #2457a6; --rep: #b0322b; --focus: #15171a;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", -apple-system, system-ui, sans-serif;
+  --c0: #8f1d18; --c1: #c2423a; --c2: #df7e72; --c3: #f0b9ae; --c4: #d8d2c6; --c5: #b3c9e8; --c6: #77a0d8; --c7: #3d70bf; --c8: #1e4890;
+  --g0: #b35806; --g1: #e08214; --g2: #fdb863; --g3: #d8d2c6; --g4: #b2abd2; --g5: #8073ac; --g6: #542788;
+  --s0: #b2182b; --s1: #d6604d; --s2: #f4a582; --s3: #d8d2c6; --s4: #92c5de; --s5: #4393c3; --s6: #2166ac;
+  --none: #efede7; --shape-stroke: #fcfbf8;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #121315; --paper: #1a1b1e; --ink: #ecebe6; --ink-2: #b9b8b1; --ink-3: #7f7f7a; --rule: #2d2e31;
+  --dem: #79a6ea; --rep: #ea7b70; --focus: #ecebe6;
+  --c0: #e65c51; --c1: #bd4a42; --c2: #8b4743; --c3: #5c403e; --c4: #3c3b38; --c5: #3c4c66; --c6: #406196; --c7: #4b7bc8; --c8: #6d9de8;
+  --g0: #e8913a; --g1: #b9722a; --g2: #7d5c34; --g3: #3c3b38; --g4: #5a5482; --g5: #7b6cc2; --g6: #a48fe8;
+  --s0: #e65c51; --s1: #ad4c44; --s2: #704642; --s3: #3c3b38; --s4: #3e5776; --s5: #4b7bc8; --s6: #6d9de8;
+  --none: #202124; --shape-stroke: #1a1b1e;
+} }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121315; --paper: #1a1b1e; --ink: #ecebe6; --ink-2: #b9b8b1; --ink-3: #7f7f7a; --rule: #2d2e31;
+  --dem: #79a6ea; --rep: #ea7b70; --focus: #ecebe6;
+  --c0: #e65c51; --c1: #bd4a42; --c2: #8b4743; --c3: #5c403e; --c4: #3c3b38; --c5: #3c4c66; --c6: #406196; --c7: #4b7bc8; --c8: #6d9de8;
+  --g0: #e8913a; --g1: #b9722a; --g2: #7d5c34; --g3: #3c3b38; --g4: #5a5482; --g5: #7b6cc2; --g6: #a48fe8;
+  --s0: #e65c51; --s1: #ad4c44; --s2: #704642; --s3: #3c3b38; --s4: #3e5776; --s5: #4b7bc8; --s6: #6d9de8;
+  --none: #202124; --shape-stroke: #1a1b1e;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { grid-template-columns: minmax(0, 1fr); max-width: 1240px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header h1 { font: 700 44px/1 var(--display); letter-spacing: 0.005em; margin: 0; text-transform: uppercase; }
+header p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
+.asof { font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+h2.sec { font: 700 24px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 4px; }
+.sec-note { color: var(--ink-2); font-size: 14px; margin: 0 0 12px; max-width: 75ch; }
+.muted { color: var(--ink-3); }
+#control { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.ctrl { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px 8px; }
+.ctrl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ctrl-label { font: 600 20px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.ctrl-big { font: 700 46px/1 var(--display); font-variant-numeric: tabular-nums; }
+.ctrl-sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.strip { width: 100%; height: auto; display: block; margin-top: 6px; overflow: visible; }
+.strip-tick { font: 10px var(--body); fill: var(--ink-3); }
+.strip-grid { stroke: var(--rule); stroke-width: 1; }
+.strip-grid.mid { stroke: var(--ink-3); stroke-dasharray: 2 3; }
+.strip-bar { stroke-width: 3; stroke-linecap: round; opacity: 0.55; }
+.strip-dot { stroke: var(--paper); stroke-width: 2; }
+.strip-dot.ours { stroke: var(--ink); stroke-width: 2; }
+.strip-label { font: 12px var(--body); fill: var(--ink-2); }
+.strip-label.ours, .strip-val.ours { font-weight: 700; fill: var(--ink); }
+.strip-val { font: 12px var(--body); fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+#mapcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px 18px; display: grid; gap: 12px; scroll-margin-top: 16px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: 500 13px var(--body); padding: 6px 11px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.seg button:focus-visible, .shape:focus-visible, tr[tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+#office button { font: 600 15px var(--display); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--ink-2); align-items: center; }
+.lg { display: inline-flex; align-items: center; gap: 5px; }
+.lg i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; border: 1px solid var(--rule); }
+.lg-cap { color: var(--ink-3); font-size: 12px; margin-right: 4px; }
+.mapgrid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .mapgrid { grid-template-columns: minmax(0, 1fr); } }
+#maptitle { font: 700 20px var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-3); margin: 0; }
+#map { width: 100%; height: auto; display: block; }
+.shape { stroke: var(--shape-stroke); stroke-width: 0.8; vector-effect: non-scaling-stroke; cursor: pointer; transition: opacity 0.12s; }
+.shape:hover { opacity: 0.82; }
+.shape.sel { stroke: var(--ink); stroke-width: 2.2; }
+.swing-map .shape { stroke-width: 0.6; }
+rect.shape { stroke-width: 0.6; }
+rect.shape.sel { stroke-width: 1.6; }
+.tile-label { font: 600 7px var(--body); fill: var(--ink-3); }
+#detail { min-width: 0; }
+.d-kicker { font: 600 13px var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+#detail h2 { font: 700 32px/1.05 var(--display); text-transform: uppercase; margin: 2px 0 4px; text-wrap: balance; }
+.d-cands { font-size: 14px; color: var(--ink-2); }
+.d-cands .dem { color: var(--dem); font-weight: 600; }
+.d-cands .rep { color: var(--rep); font-weight: 600; }
+.d-head { font-weight: 600; font-size: 15px; margin: 10px 0 4px; text-wrap: pretty; }
+.d-src { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.d-src th { text-align: left; font-weight: 500; color: var(--ink-3); padding: 4px 10px 4px 0; width: 34%; vertical-align: top; }
+.d-src td { padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.d-src tr:last-child td { border-bottom: 0; }
+#detail h3 { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 4px; color: var(--ink-2); }
+.d-steps { margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.chip { font-size: 11.5px; padding: 2px 7px 2px 6px; border-radius: 4px; background: var(--bg); border-left: 4px solid var(--chip); color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.tbl-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.tbl th { text-align: left; font: 600 12px var(--body); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.tbl td { padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tbody tr { cursor: pointer; }
+.tbl tbody tr:hover td { background: var(--bg); }
+.tbl .n { text-align: right; white-space: nowrap; }
+.tbl td:first-child { white-space: nowrap; }
+.tbl-sub { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); padding: 12px 12px 6px; }
+.tbl .why { color: var(--ink-2); min-width: 280px; }
+.gap { display: inline-block; min-width: 40px; text-align: center; font-weight: 700; border-radius: 4px; padding: 1px 6px; background: var(--gap); color: var(--ink); }
+#swing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; }
+#swing .legend { grid-column: 1 / -1; }
+.swing-fig { margin: 0; min-width: 0; }
+@media (max-width: 700px) { #swing { grid-template-columns: minmax(0, 1fr); } }
+.swing-fig figcaption { display: grid; gap: 2px; margin-bottom: 6px; font-size: 13.5px; }
+.swing-fig figcaption b { font: 700 18px var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.swing-fig figcaption span { color: var(--ink-2); }
+.swing-map { width: 100%; height: auto; max-height: 420px; display: block; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); box-shadow: 0 4px 16px rgb(0 0 0 / 0.14); border-radius: 6px; padding: 8px 10px; font-size: 13px; max-width: 280px; }
+.tip-grid { display: grid; grid-template-columns: auto auto; gap: 1px 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tip-grid span { color: var(--ink-3); }
+.method { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; }
+.mgrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 800px) { .mgrid { grid-template-columns: minmax(0, 1fr); } }
+.method h3 { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); margin: 0 0 8px; }
+.mchart { width: 100%; height: auto; display: block; margin-bottom: 10px; }
+.mzero { stroke: var(--ink-3); stroke-width: 1; }
+.mbar { fill: var(--ink-3); }
+.mbar.keep { fill: var(--dem); }
+.mbar.worse { fill: var(--rep); opacity: 0.7; }
+.mlab { font: 12px var(--body); fill: var(--ink-2); }
+.mlab.keep { font-weight: 700; fill: var(--ink); }
+.mval, .mtick { font: 11px var(--body); fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+footer { color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 6px; max-width: 90ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 520px) { header h1 { font-size: 34px; } .ctrl-big { font-size: 38px; } }
+</style>
+<div class="wrap">
+  <header>
+    <h1>2026 Midterms Map</h1>
+    <p>Every Senate, House and governor race with each source side by side: Holdout (my model), Split Ticket, the polls, the raters, Kalshi and Polymarket. Pick a race to see how Holdout got to its number and where it parts ways with the markets.</p>
+    <div class="asof">Market prices and forecasts as of <span id="asof"></span></div>
+  </header>
+
+  <section>
+    <h2 class="sec">Control</h2>
+    <div id="control"></div>
+  </section>
+
+  <section id="mapcard">
+    <div class="bar">
+      <div class="seg" id="office" role="tablist" aria-label="Office"><button data-o="S">Senate</button><button data-o="H">House</button><button data-o="G">Governors</button></div>
+      <div class="seg" id="color" aria-label="Color the map by"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="mapgrid">
+      <div><h3 id="maptitle"></h3><svg id="map" role="img" aria-label="Map of races colored by the selected source"></svg></div>
+      <aside id="detail" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sec">Where Holdout disagrees with the markets</h2>
+    <p class="sec-note">Races where Holdout's chance for the Democrat sits 5 or more points from the average of Kalshi and Polymarket, biggest first. Each row turns the market price into an expected margin at Holdout's uncertainty, to show how far apart they really are. <span id="house-note"></span> Click a row to open it on the map.</p>
+    <div class="tbl-wrap" id="disagree"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">2025: how far the governor races moved</h2>
+    <p class="sec-note">County by county, the 2025 Virginia and New Jersey governor margins against Harris's 2024 margin in the same county. Off-year electorates are smaller and differently composed, so this measures the environment for an off-year turnout, not a midterm forecast by itself.</p>
+    <div id="swing"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">How Holdout was built</h2>
+    <p class="sec-note">The first version pulled red-state Democrats back toward their state's lean and carried over part of each state's 2024 polling miss, both estimated on all the data at once. Before trusting either, each candidate adjustment was tested on elections it hadn't seen.</p>
+    <div id="method" class="method"></div>
+  </section>
+
+  <footer>
+    <div><b>Holdout, my model.</b> Senate: the Silver Bulletin poll average averaged with Split Ticket's margin, then moved by 42% of the state's 2024 presidential polling miss beyond the national miss; simulated with national (SD 3.0), state (2.7) and race errors. That carry-over was the only adjustment that predicted past polling misses when tested one midterm year at a time (1998-2022); a pull toward the state's lean and a longer state record did not, so they are shown only as other versions. House: Split Ticket's margin, averaged with district polls where there are two or more. No governor model.</div>
+    <div><b>Sources.</b> Split Ticket (Datawrapper charts), Silver Bulletin averages and polls, Kalshi and Polymarket mid prices (P(the non-Republican wins) = 1 minus the Republican's price), raters as listed in Wikipedia's ratings tables (Cook, DDHQ, The Economist, FiftyPlusOne, Fox, Inside Elections, NBC, RCP, Sabato, Silver Bulletin), 2024 and 2025 county results. House tiles are one square per district, placed by state; several states redrew their maps for 2026.</div>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+<script>/*MAPBOOK_JS*/</script>
+<script>const BOOK = /*BOOK*/; MapBook.app(BOOK);</script>

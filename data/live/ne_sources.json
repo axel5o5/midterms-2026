@@ -1,0 +1,38 @@
+{
+  "_help": [
+    "Read by midterms.live.feeds_ne.ne() at every poll; edits take effect without a restart.",
+    "non_r: race -> part of the name of the candidate who takes the 'D' (non-Republican) slot. Osborn is an independent.",
+    "state_site.race_ids: race -> [type, race id, office seq no]. ne_discover() re-reads tonight's from the site's Media CSV.",
+    "counties.<Name>.eid: the county's Clarity election id (results.enr.clarityelections.com/NE/<Name>/elections.json).",
+    "state_site.enabled: turned on by Axel 2026-10-30 (his read: the Nebraska.gov portal's no-bots terms don't cover the results site, which shows none and offers data downloads)."
+  ],
+  "non_r": {
+    "SEN-NE": "Osborn"
+  },
+  "races": [
+    "SEN-NE",
+    "GOV-NE"
+  ],
+  "state_site": {
+    "enabled": true,
+    "election_id": null,
+    "race_ids": {
+      "SEN-NE": [
+        "SW",
+        13224,
+        102
+      ],
+      "GOV-NE": [
+        "SW",
+        13508,
+        105
+      ]
+    }
+  },
+  "counties": {
+    "Sarpy": {
+      "enabled": true,
+      "eid": 127564
+    }
+  }
+}

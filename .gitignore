@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/run.log
+data/raw-live/
+data/processed/
+data/live/replay/
+data/live/mechtest/
+build/

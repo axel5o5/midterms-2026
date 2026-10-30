@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Holdout: a 2026 midterm model whose adjustments had to predict elections they weren&#x27;t fit to</title>
+<meta name="description" content="The methodology behind Holdout: data, error model, out-of-sample model selection, the election-night projection, and how it will be scored.">
+<link rel="canonical" href="https://axel5o5.github.io/midterms-2026/methodology.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2315171a'/%3E%3Crect x='6' y='6' width='9' height='20' rx='1.5' fill='%232457a6'/%3E%3Crect x='17' y='6' width='9' height='20' rx='1.5' fill='%23b0322b'/%3E%3C/svg%3E">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Holdout: a 2026 midterm model whose adjustments had to predict elections they weren&#x27;t fit to">
+<meta property="og:description" content="The methodology behind Holdout: data, error model, out-of-sample model selection, the election-night projection, and how it will be scored.">
+<meta property="og:url" content="https://axel5o5.github.io/midterms-2026/methodology.html">
+<meta property="og:image" content="https://axel5o5.github.io/midterms-2026/img/map-how-model-was-built.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Holdout: a 2026 midterm model whose adjustments had to predict elections they weren&#x27;t fit to">
+<meta name="twitter:description" content="The methodology behind Holdout: data, error model, out-of-sample model selection, the election-night projection, and how it will be scored.">
+<meta name="twitter:image" content="https://axel5o5.github.io/midterms-2026/img/map-how-model-was-built.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.querySelector('.article'), {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}]})"></script>
+<style>
+/* Layout: an election-desk sheet. Chamber odds up top, then one big map with the race
+   detail beside it, then where we disagree with markets, then 2025. */
+:root {
+  --bg: #f5f4f0; --paper: #fcfbf8; --ink: #15171a; --ink-2: #4c4f55; --ink-3: #85878c; --rule: #dedbd3;
+  --dem: #2457a6; --rep: #b0322b; --focus: #15171a;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", -apple-system, system-ui, sans-serif;
+  --c0: #8f1d18; --c1: #c2423a; --c2: #df7e72; --c3: #f0b9ae; --c4: #d8d2c6; --c5: #b3c9e8; --c6: #77a0d8; --c7: #3d70bf; --c8: #1e4890;
+  --g0: #b35806; --g1: #e08214; --g2: #fdb863; --g3: #d8d2c6; --g4: #b2abd2; --g5: #8073ac; --g6: #542788;
+  --s0: #b2182b; --s1: #d6604d; --s2: #f4a582; --s3: #d8d2c6; --s4: #92c5de; --s5: #4393c3; --s6: #2166ac;
+  --none: #efede7; --shape-stroke: #fcfbf8;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #121315; --paper: #1a1b1e; --ink: #ecebe6; --ink-2: #b9b8b1; --ink-3: #7f7f7a; --rule: #2d2e31;
+  --dem: #79a6ea; --rep: #ea7b70; --focus: #ecebe6;
+  --c0: #e65c51; --c1: #bd4a42; --c2: #8b4743; --c3: #5c403e; --c4: #3c3b38; --c5: #3c4c66; --c6: #406196; --c7: #4b7bc8; --c8: #6d9de8;
+  --g0: #e8913a; --g1: #b9722a; --g2: #7d5c34; --g3: #3c3b38; --g4: #5a5482; --g5: #7b6cc2; --g6: #a48fe8;
+  --s0: #e65c51; --s1: #ad4c44; --s2: #704642; --s3: #3c3b38; --s4: #3e5776; --s5: #4b7bc8; --s6: #6d9de8;
+  --none: #202124; --shape-stroke: #1a1b1e;
+} }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121315; --paper: #1a1b1e; --ink: #ecebe6; --ink-2: #b9b8b1; --ink-3: #7f7f7a; --rule: #2d2e31;
+  --dem: #79a6ea; --rep: #ea7b70; --focus: #ecebe6;
+  --c0: #e65c51; --c1: #bd4a42; --c2: #8b4743; --c3: #5c403e; --c4: #3c3b38; --c5: #3c4c66; --c6: #406196; --c7: #4b7bc8; --c8: #6d9de8;
+  --g0: #e8913a; --g1: #b9722a; --g2: #7d5c34; --g3: #3c3b38; --g4: #5a5482; --g5: #7b6cc2; --g6: #a48fe8;
+  --s0: #e65c51; --s1: #ad4c44; --s2: #704642; --s3: #3c3b38; --s4: #3e5776; --s5: #4b7bc8; --s6: #6d9de8;
+  --none: #202124; --shape-stroke: #1a1b1e;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { grid-template-columns: minmax(0, 1fr); max-width: 1240px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header h1 { font: 700 44px/1 var(--display); letter-spacing: 0.005em; margin: 0; text-transform: uppercase; }
+header p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
+.asof { font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+h2.sec { font: 700 24px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 4px; }
+.sec-note { color: var(--ink-2); font-size: 14px; margin: 0 0 12px; max-width: 75ch; }
+.muted { color: var(--ink-3); }
+#control { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.ctrl { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px 8px; }
+.ctrl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ctrl-label { font: 600 20px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.ctrl-big { font: 700 46px/1 var(--display); font-variant-numeric: tabular-nums; }
+.ctrl-sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.strip { width: 100%; height: auto; display: block; margin-top: 6px; overflow: visible; }
+.strip-tick { font: 10px var(--body); fill: var(--ink-3); }
+.strip-grid { stroke: var(--rule); stroke-width: 1; }
+.strip-grid.mid { stroke: var(--ink-3); stroke-dasharray: 2 3; }
+.strip-bar { stroke-width: 3; stroke-linecap: round; opacity: 0.55; }
+.strip-dot { stroke: var(--paper); stroke-width: 2; }
+.strip-dot.ours { stroke: var(--ink); stroke-width: 2; }
+.strip-label { font: 12px var(--body); fill: var(--ink-2); }
+.strip-label.ours, .strip-val.ours { font-weight: 700; fill: var(--ink); }
+.strip-val { font: 12px var(--body); fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+#mapcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px 18px; display: grid; gap: 12px; scroll-margin-top: 16px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: 500 13px var(--body); padding: 6px 11px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.seg button:focus-visible, .shape:focus-visible, tr[tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+#office button { font: 600 15px var(--display); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--ink-2); align-items: center; }
+.lg { display: inline-flex; align-items: center; gap: 5px; }
+.lg i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; border: 1px solid var(--rule); }
+.lg-cap { color: var(--ink-3); font-size: 12px; margin-right: 4px; }
+.mapgrid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .mapgrid { grid-template-columns: minmax(0, 1fr); } }
+#maptitle { font: 700 20px var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-3); margin: 0; }
+#map { width: 100%; height: auto; display: block; }
+.shape { stroke: var(--shape-stroke); stroke-width: 0.8; vector-effect: non-scaling-stroke; cursor: pointer; transition: opacity 0.12s; }
+.shape:hover { opacity: 0.82; }
+.shape.sel { stroke: var(--ink); stroke-width: 2.2; }
+.swing-map .shape { stroke-width: 0.6; }
+rect.shape { stroke-width: 0.6; }
+rect.shape.sel { stroke-width: 1.6; }
+.tile-label { font: 600 7px var(--body); fill: var(--ink-3); }
+#detail { min-width: 0; }
+.d-kicker { font: 600 13px var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+#detail h2 { font: 700 32px/1.05 var(--display); text-transform: uppercase; margin: 2px 0 4px; text-wrap: balance; }
+.d-cands { font-size: 14px; color: var(--ink-2); }
+.d-cands .dem { color: var(--dem); font-weight: 600; }
+.d-cands .rep { color: var(--rep); font-weight: 600; }
+.d-head { font-weight: 600; font-size: 15px; margin: 10px 0 4px; text-wrap: pretty; }
+.d-src { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.d-src th { text-align: left; font-weight: 500; color: var(--ink-3); padding: 4px 10px 4px 0; width: 34%; vertical-align: top; }
+.d-src td { padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.d-src tr:last-child td { border-bottom: 0; }
+#detail h3 { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 4px; color: var(--ink-2); }
+.d-steps { margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.chip { font-size: 11.5px; padding: 2px 7px 2px 6px; border-radius: 4px; background: var(--bg); border-left: 4px solid var(--chip); color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.tbl-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.tbl th { text-align: left; font: 600 12px var(--body); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.tbl td { padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tbody tr { cursor: pointer; }
+.tbl tbody tr:hover td { background: var(--bg); }
+.tbl .n { text-align: right; white-space: nowrap; }
+.tbl td:first-child { white-space: nowrap; }
+.tbl-sub { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); padding: 12px 12px 6px; }
+.tbl .why { color: var(--ink-2); min-width: 280px; }
+.gap { display: inline-block; min-width: 40px; text-align: center; font-weight: 700; border-radius: 4px; padding: 1px 6px; background: var(--gap); color: var(--ink); }
+#swing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; }
+#swing .legend { grid-column: 1 / -1; }
+.swing-fig { margin: 0; min-width: 0; }
+@media (max-width: 700px) { #swing { grid-template-columns: minmax(0, 1fr); } }
+.swing-fig figcaption { display: grid; gap: 2px; margin-bottom: 6px; font-size: 13.5px; }
+.swing-fig figcaption b { font: 700 18px var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.swing-fig figcaption span { color: var(--ink-2); }
+.swing-map { width: 100%; height: auto; max-height: 420px; display: block; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); box-shadow: 0 4px 16px rgb(0 0 0 / 0.14); border-radius: 6px; padding: 8px 10px; font-size: 13px; max-width: 280px; }
+.tip-grid { display: grid; grid-template-columns: auto auto; gap: 1px 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tip-grid span { color: var(--ink-3); }
+.method { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; }
+.mgrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 800px) { .mgrid { grid-template-columns: minmax(0, 1fr); } }
+.method h3 { font: 700 15px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); margin: 0 0 8px; }
+.mchart { width: 100%; height: auto; display: block; margin-bottom: 10px; }
+.mzero { stroke: var(--ink-3); stroke-width: 1; }
+.mbar { fill: var(--ink-3); }
+.mbar.keep { fill: var(--dem); }
+.mbar.worse { fill: var(--rep); opacity: 0.7; }
+.mlab { font: 12px var(--body); fill: var(--ink-2); }
+.mlab.keep { font-weight: 700; fill: var(--ink); }
+.mval, .mtick { font: 11px var(--body); fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+footer { color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 6px; max-width: 90ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 520px) { header h1 { font-size: 34px; } .ctrl-big { font-size: 38px; } }
+
+
+body { margin: 0; }
+/* the template's .wrap grid has an auto track, so the wide disagreement table pushed every section past
+   the viewport at phone width; pin the track so .tbl-wrap scrolls inside its card instead */
+.wrap { grid-template-columns: minmax(0, 1fr); }
+.site-nav { background: var(--paper); border-bottom: 1px solid var(--rule); }
+.site-nav-in { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 0 22px; }
+.site-nav a { font: 600 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); text-decoration: none; padding: 13px 0 11px; border-bottom: 2px solid transparent; }
+.site-nav a:hover { color: var(--ink); }
+.site-nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.site-nav a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.site-nav .ext { color: var(--ink-3); font-weight: 500; }
+header .asof { font-size: 14px; color: var(--ink-2); margin-top: 10px; }
+header .asof b { color: var(--ink); font-weight: 600; }
+footer a { color: inherit; }
+@media (max-width: 520px) { .site-nav-in { gap: 0 16px; } .site-nav a { font-size: 13px; padding: 10px 0 8px; } }
+
+
+.article { max-width: 760px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.article h1 { font: 700 40px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.005em; margin: 0 0 6px; text-wrap: balance; }
+.article .byline { color: var(--ink-3); font-size: 14px; margin: 0 0 24px; }
+.article h2 { font: 700 24px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 40px 0 10px; }
+.article p, .article li { font-size: 16.5px; line-height: 1.65; color: var(--ink); }
+.article p { margin: 0 0 14px; }
+.article ul { padding-left: 22px; margin: 0 0 16px; display: grid; gap: 4px; }
+.article a { color: var(--dem); text-underline-offset: 2px; }
+.article strong { font-weight: 650; }
+.article hr { border: 0; border-top: 1px solid var(--rule); margin: 28px 0; }
+.article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; margin: 18px 0 6px; }
+.article p:has(> img) { margin: 0; }
+.article em { color: var(--ink-2); }
+.article pre { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 14px; }
+.article code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.92em; }
+.article .tbl-wrap { overflow-x: auto; margin: 10px 0 18px; }
+.article table { width: 100%; border-collapse: collapse; font-size: 14.5px; font-variant-numeric: tabular-nums; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; }
+.article th { text-align: left; font: 600 12px var(--body); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+.article td { padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.article tr:last-child td { border-bottom: 0; }
+.article td:last-child, .article th:last-child { text-align: right; }
+.article h3 { font: 700 17px/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); margin: 26px 0 8px; }
+.article .math { overflow-x: auto; }
+.article ol.refs { font-size: 14.5px; padding-left: 24px; display: grid; gap: 6px; }
+.article ol.refs li { font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+.article sup a, .article a.cite { text-decoration: none; }
+@media (max-width: 520px) { .article h1 { font-size: 30px; } .article p, .article li { font-size: 16px; } }
+</style>
+</head>
+<body>
+<nav class="site-nav" aria-label="Site">
+  <div class="site-nav-in">
+    <a href="./">Map</a>
+    <a href="writeup.html">Write-up</a>
+    <a href="methodology.html" aria-current="page">Methodology</a>
+    <a href="replay.html">Election-night replay</a>
+    <a href="https://github.com/axel5o5/midterms-2026">Code &amp; notebooks <span class="ext" aria-hidden="true">↗</span></a>
+  </div>
+</nav>
+<article class="article">
+<h1>Holdout: a 2026 midterm model whose adjustments had to predict elections they weren&#x27;t fit to</h1>
+<p class="byline">Axel Browne · 2026-10-30 · <a href="https://github.com/axel5o5/midterms-2026/blob/main/docs/methodology.md">source</a></p>
+<p><strong>Abstract.</strong> Holdout is a forecast of the 2026 US Senate and House elections, built to be scored against prediction markets and published forecasts after November 3. Its center averages a polling average with Split Ticket's model. Its uncertainty is a three-part polling error (national, state, race) measured on 25 years of polls. Its one systematic adjustment is the result of a test: each candidate adjustment was fitted on all midterm years but one and scored on the year left out. Of three plausible state-level adjustments, only carrying over 42% of a state's previous presidential polling miss reduced the held-out error (5.27 vs 5.56 points of margin across 344 Senate and governor races); a fade toward each state's partisan lean, which looked right in-sample, did not. On election night the same machinery projects races from county returns, starting from market prices at the first votes so that any disagreement it flags comes from counted votes. Every input and every version of the model was saved before the election, so the evaluation is fixed in advance.</p>
+<hr />
+<h2>1. Why build a model at all</h2>
+<p>The project's question is how well each kind of source calls an election: prediction markets against models, and all of them against the polls. Answering it needs a record of what each source said and when, which is the main data product here (Section 2). A model of my own adds one thing the published forecasts can't: every assumption is written down and testable, so when it disagrees with the markets I can say exactly why.</p>
+<p>The design rule follows from that. An adjustment earns a place only if it predicts polling misses in elections it was not fitted to. Several adjustments that are standard intuitions in election analysis fail that test (Section 4), and the main version of Holdout keeps only what passed. The others stay as labelled variations, scored alongside it.</p>
+<h2>2. Data</h2>
+<p><strong>Forecast and market snapshots.</strong> Twice a day from October 29 to November 6, a scheduled job saves every midterm market on Polymarket (1,259 events) through its public API [<a href="#ref-1">1</a>]; Split Ticket's race-level model [<a href="#ref-2">2</a>]; Silver Bulletin's published polling averages and the polls behind them; and the ratings of eleven raters as tabulated on Wikipedia. Each run is committed with its timestamp. Market prices can be recovered later; a forecaster's daily number mostly can't, which is why this runs before the election rather than after.</p>
+<p><strong>Historical polls.</strong> Final polling averages and results for every statewide race since 1998 come from FiveThirtyEight's raw polls archive [<a href="#ref-3">3</a>]. A race's <em>miss</em> is its result minus its final polling average, in points of the Democratic margin (positive means the Democrat beat the polls).</p>
+<p><strong>Results and baselines.</strong> County presidential results for 2020 and 2024 [<a href="#ref-4">4</a>], county returns by vote mode for 2022 [<a href="#ref-5">5</a>], turnout by voting method from the EAC's Election Administration and Voting Survey [<a href="#ref-6">6</a>], certified 2025 Virginia and New Jersey governor results from the two states, and map shapes from us-atlas [<a href="#ref-7">7</a>].</p>
+<p><strong>Collection rules.</strong> Every host was checked for robots.txt and terms of use before collection. Sources that disallow AI crawlers or prohibit automated collection were left out (Decision Desk HQ, 270toWin, VoteHub, The Economist), and no bot check was circumvented. The public repository republishes code, derived data and the model's outputs, not other sources' raw data.</p>
+<h2>3. The model</h2>
+<h3>3.1 Center</h3>
+<p>For Senate race <span class="math">\(i\)</span> in state <span class="math">\(s\)</span>, Holdout's expected Democratic margin is</p>
+<div class="math">$$
+c_i = \tfrac{1}{2}\left(p_i + t_i\right) + \beta\, m_s ,
+$$</div>
+<p>where <span class="math">\(p_i\)</span> is Silver Bulletin's polling average (Split Ticket's margin stands in when a race has no polls), <span class="math">\(t_i\)</span> is Split Ticket's margin, <span class="math">\(m_s\)</span> is the state's polling miss in the 2024 presidential race beyond that year's national miss, and <span class="math">\(\beta = 0.42\)</span> (Section 4). Averaging polls with a model that includes fundamentals follows the practice of published forecasts [<a href="#ref-8">8</a>, <a href="#ref-9">9</a>]; averaging rather than re-deriving Split Ticket's fundamentals keeps Holdout's own assumptions few. Where an independent is the main opponent of the Republican (Nebraska, Montana, South Dakota), the margin is the non-Republican candidate's.</p>
+<p>For House district <span class="math">\(j\)</span>, the center is Split Ticket's margin, averaged with the district's polling average where it has two or more polls in 60 days; sponsored polls are moved 5 points against the sponsor first. The carry-over is applied to Senate races only; whether it also helps House races is one of the things the evaluation will test. Governor races are not modelled.</p>
+<h3>3.2 Error</h3>
+<p>Each race's margin is simulated as</p>
+<div class="math">$$
+y_i = c_i + \nu + \sigma_s + \varepsilon_i ,
+$$</div>
+<p>a national error <span class="math">\(\nu\)</span> shared by every race, a state error <span class="math">\(\sigma_s\)</span> shared by races in one state, and a race error <span class="math">\(\varepsilon_i\)</span>. This decomposition, and the finding that the shared parts are large, follow Shirani-Mehr et al. [<a href="#ref-10">10</a>]; the magnitudes are my own estimates from the 1998–2022 archive, where a competitive statewide race's final average missed the margin by about 5 points (root mean square), roughly 40% of that variance shared nationally and 30% within states (<a href="polling-error-research.md">brief</a>); AAPOR's evaluations report midterm Senate and governor errors of similar size, 4.0 to 5.8 points from 2002 to 2014 [<a href="#ref-11">11</a>].</p>
+<div class="tbl-wrap"><table>
+<thead>
+<tr>
+  <th>Term</th>
+  <th>Distribution</th>
+  <th>SD (points of margin)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>National <span class="math">\(\nu\)</span></td>
+  <td>Student-<em>t</em>, 5 df, scaled to unit variance</td>
+  <td>3.0</td>
+</tr>
+<tr>
+  <td>State <span class="math">\(\sigma_s\)</span></td>
+  <td>Normal</td>
+  <td>2.7</td>
+</tr>
+<tr>
+  <td>Race <span class="math">\(\varepsilon_i\)</span></td>
+  <td>Student-<em>t</em>, 10 df</td>
+  <td>2.7 with 5+ polls in 30 days; <span class="math">\(\sqrt{2.5^2 + 25/n}\)</span> with <span class="math">\(n\)</span> = 1–4; 8 with none</td>
+</tr>
+</tbody>
+</table></div>
+<p>For a well-polled Senate race the three add to <span class="math">\(\sqrt{3.0^2 + 2.7^2 + 2.7^2} \approx 4.9\)</span> points, which matches the miss measured directly. The national term has fat tails, my choice rather than an established convention, because a single year's shared miss can be large (2020's was 5.5 points). Its mean is zero: across 25 years its sign has flipped from cycle to cycle with no usable memory (<a href="polling-error-research.md">brief</a>), so Holdout makes no call on the direction of this year's miss.</p>
+<p>House districts use the same national and state terms, with a race error whose SD depends on the number of district polls (8, 7, 6 and 5 points for 0–3 polls) and <em>t</em> tails (6 df when thin, 10 otherwise).</p>
+<h3>3.3 Simulation</h3>
+<p>Each of 100,000 draws produces a margin for every race. Senate control counts Democratic and Democratic-caucusing seats not up in 2026 plus the races won; Democrats need 51, since the Vice President breaks ties for Republicans. House control needs 218. A race's probability is the share of draws its non-Republican candidate wins.</p>
+<h2>4. Choosing the adjustments out of sample</h2>
+<h3>4.1 Candidates</h3>
+<p>The first version of the model carried two adjustments, both estimated in-sample on the same history they were meant to explain:</p>
+<ul>
+<li><strong>Fade</strong>: polls overstate candidates who run far ahead of their state's lean, so pull the margin back by <span class="math">\(\gamma \times\)</span> (poll margin − state's last presidential margin). Fitted in-sample, <span class="math">\(\gamma = -0.08\)</span>.</li>
+<li><strong>Presidential carry-over</strong>: a state's miss in the last presidential race, beyond that year's national miss, partly recurs.</li>
+</ul>
+<p>A third was added when testing: <strong>state record</strong>, the state's average miss beyond the national miss over every statewide race in the previous 8 or 12 years.</p>
+<h3>4.2 Test</h3>
+<p>The target is each race's miss beyond its year's national miss, the part a state-level adjustment could predict. Each combination of adjustments is a linear model with no intercept, fitted on five of the six midterms from 2002 to 2022 and scored on the sixth, rotating through all six [<a href="#ref-12">12</a>, <a href="#ref-13">13</a>]. Holding out whole years matters because races in one year share a national miss: holding out individual races would let the model see the answer through its neighbours [<a href="#ref-14">14</a>]. The sample is 344 Senate and governor races with a previous presidential miss and at least two earlier statewide races in the state.</p>
+<h3>4.3 Results</h3>
+<div class="tbl-wrap"><table>
+<thead>
+<tr>
+  <th>Adjustment</th>
+  <th>Held-out RMSE (points)</th>
+  <th>vs none</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Presidential carry-over</td>
+  <td><strong>5.27</strong></td>
+  <td>−0.29</td>
+</tr>
+<tr>
+  <td>Carry-over + state record</td>
+  <td>5.35</td>
+  <td>−0.21</td>
+</tr>
+<tr>
+  <td>Fade + carry-over</td>
+  <td>5.38</td>
+  <td>−0.17</td>
+</tr>
+<tr>
+  <td>State record</td>
+  <td>5.51</td>
+  <td>−0.05</td>
+</tr>
+<tr>
+  <td>None</td>
+  <td>5.56</td>
+  <td>0</td>
+</tr>
+<tr>
+  <td>Fade</td>
+  <td>5.57</td>
+  <td>+0.01</td>
+</tr>
+</tbody>
+</table></div>
+<p>Only the carry-over helps, and adding anything to it makes the held-out score worse. It improved the score in each of the last four midterms (2010, 2014, 2018, 2022) and worsened it in 2002 and 2006. Its weight is 0.42; resampling whole years puts 90% of fits between 0.22 and 0.56. Two further checks:</p>
+<ul>
+<li><strong>Thin inputs.</strong> Kansas's 2024 miss rests on a single poll, so I tested discounting misses by the number of polls behind them, <span class="math">\(\beta \cdot n/(n+k)\)</span>. Every discount scored worse (5.27 rising to 5.29 at <span class="math">\(k\)</span> = 8). In the history, states with thin polling kept being mispolled, so a miss from a thin record still carries signal.</li>
+<li><strong>Why the fade fails.</strong> The pattern behind it is real in the raw numbers: in 69 races since 2000 where a Democrat or independent polled within 5 points in a state that voted Republican by 10 or more, the Republican beat the polls by 2.4 points on average. About 1.1 points of that is those years' national miss, and the remainder does not scale with distance from the lean in a way that predicts new races. A weak opponent can put a candidate far above the lean for reasons the polls capture correctly.</li>
+</ul>
+<p>The main version of Holdout therefore uses the carry-over alone. The first version (fade plus a 0.34 carry-over), a state-record version and a no-adjustment version are kept as variations and scored with it.</p>
+<h2>5. Election night</h2>
+<p>On election night a local dashboard reads official county results from state and county election sites and live prediction-market prices. It is read-only and places no orders.</p>
+<p><strong>Projection.</strong> Each county's final margin is projected as its 2024 presidential margin plus a statewide swing plus a shrunk county-specific deviation. The swing is a precision-weighted combination of the pre-election center, counties that have finished counting, and, at lower weight, partly counted counties. A partly counted county's swing is judged against how each vote type (mail, early, Election Day) leaned relative to the county in the previous comparable election, so a county that counts its mail first does not read as a Democratic swing. The leans come from 2022 returns by mode [<a href="#ref-5">5</a>], or from a county's own 2024 files where 2022 has no breakdown. Expected turnout comes from 2022, rescaled by counties that finish. The projection's SD combines the swing's posterior uncertainty, county noise and a turnout term, with a floor that shrinks as the count completes. The closest published relative is The Washington Post's county-level model, which also projects outstanding votes from a past-result baseline without polls [<a href="#ref-15">15</a>, <a href="#ref-16">16</a>].</p>
+<p><strong>Starting point.</strong> Each race starts from the market's price, converted to a margin at the race's own SD, <span class="math">\(c_0 = \mathrm{SD}_i \cdot \Phi^{-1}(\text{mid})\)</span>, frozen when the first votes arrive anywhere. Pre-election disagreements between Holdout and the markets therefore can't fire as election-night signals; anything flagged after that comes from counted votes.</p>
+<p><strong>Signals.</strong> A signal opens when the projection's probability differs from a venue's executable price by at least 3¢ after Kalshi's taker fee, <span class="math">\(0.07\,p(1-p)\)</span>; not at prices outside 3–97¢, where fees and locked-up capital dominate; and not once a race is 99% counted. Markets aggregate public information well [<a href="#ref-17">17</a>, <a href="#ref-18">18</a>], so most signals are expected to be errors in the projection, and the log exists to measure that.</p>
+<p><strong>Validation.</strong> Replaying the 2024 presidential count in seven states (North Carolina, Georgia, Pennsylvania, Iowa, Florida, Texas, Minnesota), each in eight simulated reporting orders, using only information available before 2024: the 90% intervals covered the final margin in about 97% of snapshots between 10% and 95% counted, with an average absolute miss of 1.7 points. The uncertainty settings were tuned on these replays, so coverage on real counts should be lower. Florida and Texas were the hard cases: the first counties to finish were least like the last.</p>
+<h2>6. Where Holdout stood before the election</h2>
+<p>| | Holdout | First version | No adjustments | Polymarket |
+|---|---|---|---|---|---|
+| Senate control (D) | 73% | 68% | 78% | 73% |
+| House majority (D) | 96% | | | 94% |</p>
+<p>Holdout sits 9 to 15 points below Polymarket in three Senate races (Kansas 39% vs 54%, Iowa 33% vs 45%, Texas 63% vs 72%). At Holdout's uncertainty those are 1.3 to 1.7 points of expected margin, and in each the gap comes from the carry-over: these are the states where the 2024 polls overstated Harris most. A separate reconciliation (notebook 01) expressed every published Senate forecast as the national polling bias that would reproduce its probability under this error model: forecasts from 53% to 76% all fall within about 2 points of bias of each other.</p>
+<h2>7. What is different here</h2>
+<ul>
+<li><strong>Adjustments selected by held-out years, not fitted in-sample.</strong> Election models commonly include adjustments justified by in-sample fit or intuition. Scoring each adjustment on entire held-out election years, and keeping only those that help, removed an intuitive one (the fade) and changed the forecast by several points in the races where it mattered.</li>
+<li><strong>A measured, out-of-sample carry-over of state polling error.</strong> Gelman et al. note a positive correlation between a state's polling errors in successive elections but choose not to model it [<a href="#ref-19">19</a>]; Isakov and Kuriwaki use 2016's state errors as a scenario for 2020 [<a href="#ref-20">20</a>]; the AAPOR task force concluded that one election's polling errors can't predict the next's [<a href="#ref-11">11</a>]. Estimating the carry-over from a presidential race into the following midterm, at 42% (90% range 0.22–0.56), and showing that it predicts held-out midterms, is to my knowledge new, and it holds only weakly (it lost in two of six years).</li>
+<li><strong>Separating pre-election disagreement from what the votes say.</strong> Anchoring the election-night projection to the market price at the first votes means a signal reflects counted votes only, not a standing difference of opinion between the model and the market.</li>
+<li><strong>Comparing forecasts as implied polling bias.</strong> Translating each published probability into the national polling bias that reproduces it puts very different-looking forecasts on one scale, and shows how small most disagreements are in the quantity that actually varies.</li>
+<li><strong>A pre-registered evaluation.</strong> Every source's numbers and every version of the model were committed with timestamps before the election, so the scoring cannot be tuned after the fact.</li>
+</ul>
+<h2>8. Limitations</h2>
+<ul>
+<li><strong>Six midterms.</strong> The carry-over's gain is about 5% of the error, it lost in two of six years, and the 90% range of its weight is wide.</li>
+<li><strong>Overlap with Split Ticket.</strong> Split Ticket's model may already reflect some state-level polling history; averaging it in and then applying the carry-over could partly double-count.</li>
+<li><strong>Thin 2024 inputs.</strong> Kansas's 2024 miss rests on a single survey; Iowa's comes from published averages that include one final-week outlier.</li>
+<li><strong>Election-night coverage.</strong> Feeds exist for 11 states; several states' official results sit behind bot checks, and those races move only with their prior and the national swing. The projection's settings were tuned on the replays used to validate it.</li>
+<li><strong>No governor model</strong>, and House centers lean on one external model.</li>
+</ul>
+<h2>9. How it will be scored</h2>
+<p>After the results are certified: the probability each source gave the eventual winner over the final days, and how far ahead each race locked in; Brier score, log loss and calibration across all House, Senate and governor races; markets against models; Holdout against its three variations, which is the direct test of choosing adjustments out of sample; and the election-night tool's coverage on real counts against the 97% from the replays, with how quickly flagged gaps closed.</p>
+<h2>Code and data</h2>
+<p>Everything above is in the <a href="https://github.com/axel5o5/midterms-2026">repository</a>: the error model (<code>src/midterms/senate.py</code>, <code>house.py</code>), the model-selection test (<code>src/midterms/carryover.py</code>, <a href="../notebooks/04_model_selection.ipynb">notebook 04</a>), the election-night projection (<code>src/midterms/live/</code>, <a href="../notebooks/03_election_night.ipynb">notebook 03</a>), and the <a href="https://axel5o5.github.io/midterms-2026/">interactive map</a>.</p>
+<h2>References</h2>
+<ol>
+<li><a id="ref-1"></a>Polymarket (n.d.). <em>Polymarket API documentation</em>. <a href="https://docs.polymarket.com">https://docs.polymarket.com</a></li>
+<li><a id="ref-2"></a>The Argument (2026, June 17). <em>2026 midterms model</em> [Split Ticket]. <a href="https://www.theargumentmag.com/p/split-ticket-2026-midterms-model">https://www.theargumentmag.com/p/split-ticket-2026-midterms-model</a></li>
+<li><a id="ref-3"></a>FiveThirtyEight (2024). <em>raw_polls.csv</em> [Data set], fivethirtyeight/data, pollster-ratings. <a href="https://github.com/fivethirtyeight/data/tree/master/pollster-ratings">https://github.com/fivethirtyeight/data/tree/master/pollster-ratings</a> (CC BY 4.0)</li>
+<li><a id="ref-4"></a>McGovern, T., Larson, S., Ro, J., &amp; Hodges, M. (2025). <em>US_County_Level_Election_Results_08-24</em> (v2.0.0) [Data set]. Zenodo. <a href="https://doi.org/10.5281/zenodo.14679171">https://doi.org/10.5281/zenodo.14679171</a></li>
+<li><a id="ref-5"></a>MIT Election Data + Science Lab (2025). <em>U.S. Senate precinct-level returns 2022</em> (v3) and <em>State offices precinct-level returns 2022</em> (v5) [Data sets]. Harvard Dataverse. <a href="https://doi.org/10.7910/DVN/IAD3XR">https://doi.org/10.7910/DVN/IAD3XR</a>, <a href="https://doi.org/10.7910/DVN/OAARCY">https://doi.org/10.7910/DVN/OAARCY</a></li>
+<li><a id="ref-6"></a>U.S. Election Assistance Commission (2026). <em>2024 Election Administration and Voting Survey dataset</em> (v2.0). <a href="https://www.eac.gov/research-and-data/studies-and-reports">https://www.eac.gov/research-and-data/studies-and-reports</a></li>
+<li><a id="ref-7"></a>Bostock, M. (2023). <em>us-atlas</em> (v3.0.1), from U.S. Census Bureau 2017 cartographic boundary files. <a href="https://github.com/topojson/us-atlas">https://github.com/topojson/us-atlas</a></li>
+<li><a id="ref-8"></a>Linzer, D. A. (2013). Dynamic Bayesian forecasting of presidential elections in the states. <em>Journal of the American Statistical Association</em>, 108(501), 124–134. <a href="https://doi.org/10.1080/01621459.2012.737735">https://doi.org/10.1080/01621459.2012.737735</a></li>
+<li><a id="ref-9"></a>Heidemanns, M., Gelman, A., &amp; Morris, G. E. (2020). An updated dynamic Bayesian forecasting model for the U.S. presidential election. <em>Harvard Data Science Review</em>, 2(4). <a href="https://doi.org/10.1162/99608f92.fc62f1e1">https://doi.org/10.1162/99608f92.fc62f1e1</a></li>
+<li><a id="ref-10"></a>Shirani-Mehr, H., Rothschild, D., Goel, S., &amp; Gelman, A. (2018). Disentangling bias and variance in election polls. <em>Journal of the American Statistical Association</em>, 113(522), 607–614. <a href="https://doi.org/10.1080/01621459.2018.1448823">https://doi.org/10.1080/01621459.2018.1448823</a></li>
+<li><a id="ref-11"></a>AAPOR Task Force on 2020 Pre-Election Polling (2021). <em>An evaluation of the 2020 general election polls</em>. American Association for Public Opinion Research. <a href="https://aapor.org/wp-content/uploads/2022/11/AAPOR-Task-Force-on-2020-Pre-Election-Polling_Report-FNL.pdf">https://aapor.org/wp-content/uploads/2022/11/AAPOR-Task-Force-on-2020-Pre-Election-Polling_Report-FNL.pdf</a></li>
+<li><a id="ref-12"></a>Stone, M. (1974). Cross-validatory choice and assessment of statistical predictions. <em>Journal of the Royal Statistical Society: Series B</em>, 36(2), 111–133. <a href="https://doi.org/10.1111/j.2517-6161.1974.tb00994.x">https://doi.org/10.1111/j.2517-6161.1974.tb00994.x</a></li>
+<li><a id="ref-13"></a>Hastie, T., Tibshirani, R., &amp; Friedman, J. (2009). <em>The elements of statistical learning</em> (2nd ed.). Springer. <a href="https://doi.org/10.1007/978-0-387-84858-7">https://doi.org/10.1007/978-0-387-84858-7</a></li>
+<li><a id="ref-14"></a>Roberts, D. R., Bahn, V., Ciuti, S., Boyce, M. S., Elith, J., Guillera-Arroita, G., et al. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. <em>Ecography</em>, 40(8), 913–929. <a href="https://doi.org/10.1111/ecog.02881">https://doi.org/10.1111/ecog.02881</a></li>
+<li><a id="ref-15"></a>Cherian, J., &amp; Bronner, L. (2020). <em>How The Washington Post estimates outstanding votes for the 2020 presidential election</em> [Technical report]. <a href="https://s3.us-east-1.amazonaws.com/elex-models-prod/2020-general/write-up/election_model_writeup.pdf">https://s3.us-east-1.amazonaws.com/elex-models-prod/2020-general/write-up/election_model_writeup.pdf</a></li>
+<li><a id="ref-16"></a>Gibbs, I., &amp; Candès, E. (2021). <em>Adaptive conformal inference under distribution shift</em> (arXiv:2106.00170). <a href="https://doi.org/10.48550/arXiv.2106.00170">https://doi.org/10.48550/arXiv.2106.00170</a></li>
+<li><a id="ref-17"></a>Wolfers, J., &amp; Zitzewitz, E. (2004). Prediction markets. <em>Journal of Economic Perspectives</em>, 18(2), 107–126. <a href="https://doi.org/10.1257/0895330041371321">https://doi.org/10.1257/0895330041371321</a></li>
+<li><a id="ref-18"></a>Berg, J. E., Nelson, F. D., &amp; Rietz, T. A. (2008). Prediction market accuracy in the long run. <em>International Journal of Forecasting</em>, 24(2), 285–300. <a href="https://doi.org/10.1016/j.ijforecast.2008.03.007">https://doi.org/10.1016/j.ijforecast.2008.03.007</a></li>
+<li><a id="ref-19"></a>Gelman, A., Goodrich, B., &amp; Han, G. (2024). Grappling with uncertainty in forecasting the 2024 U.S. presidential election. <em>Harvard Data Science Review</em>, 6(4). <a href="https://doi.org/10.1162/99608f92.a919e3fa">https://doi.org/10.1162/99608f92.a919e3fa</a></li>
+<li><a id="ref-20"></a>Isakov, M., &amp; Kuriwaki, S. (2020). Towards principled unskewing: Viewing 2020 election polls through a corrective lens from 2016. <em>Harvard Data Science Review</em>, 2(4). <a href="https://doi.org/10.1162/99608f92.86a46f38">https://doi.org/10.1162/99608f92.86a46f38</a></li>
+</ol>
+
+</article>
+</body>
+</html>
