@@ -9,11 +9,11 @@
 
 **See it:** [live map](https://axel5o5.github.io/midterms-2026/) · [write-up](https://axel5o5.github.io/midterms-2026/writeup.html) · [methodology](https://axel5o5.github.io/midterms-2026/methodology.html) · [election-night replay](https://axel5o5.github.io/midterms-2026/replay.html) · [how Holdout was chosen (notebook 04)](notebooks/04_model_selection.ipynb)
 
-## What Holdout says before Tuesday (2026-10-30)
+## What Holdout says before Tuesday (2026-11-02)
 
-**Holdout gives Democrats a 73% chance of the Senate and 96% of the House, close to the markets on both chambers (Polymarket: Senate 73%, House 94%). It parts from the markets in three red-state Senate races: Kansas 39% (Polymarket 54%), Iowa 33% (45%) and Texas 63% (72%), 9 to 15 points lower. In each, the gap comes from the one adjustment that survived an out-of-sample test: part of the state's 2024 presidential polling miss carries into 2026.**
+**Holdout gives Democrats a 77% chance of the Senate and 95% of the House, close to the markets on both chambers (Polymarket: Senate 79%, House 96%). It parts from the markets most in four Senate races. In Iowa (34% for the Democrat; Polymarket 49%), Kansas (52%; 62%) and Texas (68%; 76%) it is 8 to 15 points lower, and the gap comes from the one adjustment that survived an out-of-sample test: part of the state's 2024 presidential polling miss carries into 2026. In South Carolina it is 11 points higher (43%; 32%), because the polls and Split Ticket have the race closer than the market does. Iowa's 15 points come to under 2 points of margin: the race is close enough that a small shift moves the odds a lot.**
 
-To see it: the [live map](https://axel5o5.github.io/midterms-2026/) has every race with each source's number; [notebook 04](notebooks/04_model_selection.ipynb) shows the test; [Kansas, Iowa, Texas](docs/special-cases-ks-ia-tx.md) works through the three races.
+To see it: the [live map](https://axel5o5.github.io/midterms-2026/) has every race with each source's number, as of the 2026-11-02 morning snapshot and Polymarket's prices that afternoon; [notebook 04](notebooks/04_model_selection.ipynb) shows the test; [Kansas, Iowa, Texas](docs/special-cases-ks-ia-tx.md) works through the three carry-over races as of 2026-10-30, when Kansas stood at 39% (Split Ticket's 11-02 update moved it).
 
 ---
 
