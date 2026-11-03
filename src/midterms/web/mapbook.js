@@ -210,7 +210,7 @@
           ${MB.strip([{ label: 'Holdout', p: x.ours, kind: 'ours' }, { label: 'Split Ticket', p: x.split_ticket, kind: 'src' }, { label: 'Kalshi', p: x.kalshi, kind: 'mkt' }, { label: 'Polymarket', p: x.polymarket, kind: 'mkt' }], 420)}</div>`;
       };
       $('control').innerHTML =
-        card('S', 'Democrats win the Senate', `Holdout's seat range ${Math.round(c.S.seats.p10)}–${Math.round(c.S.seats.p90)} Democratic seats (80%), 51 needed${c.S.variants ? `. Other versions: first ${MB.pct(c.S.variants['first version'])}, longer state record ${MB.pct(c.S.variants['longer state record'])}, no adjustments ${MB.pct(c.S.variants['no adjustments'])}` : ''}`) +
+        card('S', 'Democrats win the Senate', `Holdout's seat range ${Math.round(c.S.seats.p10)}–${Math.round(c.S.seats.p90)} Democratic seats (80%), 51 needed${c.S.variants ? `. Other versions: one weight (Oct 30) ${MB.pct(c.S.variants['one weight (Oct 30)'])}, first ${MB.pct(c.S.variants['first version'])}, longer state record ${MB.pct(c.S.variants['longer state record'])}, no adjustments ${MB.pct(c.S.variants['no adjustments'])}` : ''}`) +
         card('H', 'Democrats win the House', `Holdout's median ${Math.round(c.H.seats.median)} seats, ${Math.round(c.H.seats.p10)}–${Math.round(c.H.seats.p90)} (80%), 218 needed`);
     }
 
@@ -231,15 +231,15 @@
     function method() {
       const M = BOOK.method; if (!M) return;
       const none = M.scores.find(x => x.spec === 'none').rmse;
-      const label = (k) => ({ 'pres (2024-style carry-over)': 'Previous presidential miss (kept)', 'hist (longer state record)': 'Longer state record', 'none': 'No adjustment', 'fade': 'Red-state fade' }[k] || (k.replace('pres', 'presidential miss').replace('hist', 'longer record').replace(/^./, c => c.toUpperCase())));
+      const label = (k) => ({ 'pres (2024-style carry-over)': 'Previous presidential miss, one weight', 'pres split by direction': 'Previous presidential miss, by direction (kept)', 'hist (longer state record)': 'Longer state record', 'none': 'No adjustment', 'fade': 'Red-state fade' }[k] || (k.replace('pres', 'presidential miss').replace('hist', 'longer record').replace(/^./, c => c.toUpperCase())));
       const sc = M.scores.slice().sort((a, b) => a.rmse - b.rmse);
-      const W = 560, lab = 230, rowH = 24, x0 = lab + 10, span = Math.max(...sc.map(x => Math.abs(x.rmse - none))) || 1;
+      const W = 640, lab = 310, rowH = 24, x0 = lab + 10, span = Math.max(...sc.map(x => Math.abs(x.rmse - none))) || 1;
       const half = (W - x0 - 110) / 2, zero = x0 + 50 + half;
       const px = (d) => zero + d / span * half;
       let svg = `<svg class="mchart" viewBox="0 0 ${W} ${sc.length * rowH + 30}" role="img" aria-label="Held-out polling miss by adjustment">`;
       svg += `<line x1="${zero}" x2="${zero}" y1="4" y2="${sc.length * rowH + 6}" class="mzero"/>`;
       sc.forEach((x, i) => {
-        const d = x.rmse - none, y = 8 + i * rowH, keep = x.spec.startsWith('pres (');
+        const d = x.rmse - none, y = 8 + i * rowH, keep = x.spec === 'pres split by direction';
         svg += `<text x="${lab}" y="${y + 13}" text-anchor="end" class="mlab${keep ? ' keep' : ''}">${MB.esc(label(x.spec))}</text>`;
         svg += `<rect x="${Math.min(zero, px(d))}" y="${y + 3}" width="${Math.max(1, Math.abs(px(d) - zero))}" height="14" rx="2" class="mbar${keep ? ' keep' : d > 0 ? ' worse' : ''}"/>`;
         svg += `<text x="${px(d) + (d < 0 ? -4 : 4)}" y="${y + 14}" text-anchor="${d < 0 ? 'end' : 'start'}" class="mval">${d > 0 ? '+' : ''}${d.toFixed(2)}</text>`;
@@ -261,8 +261,8 @@
       $('method').innerHTML = `
         <div class="mgrid"><div><h3>Each adjustment, scored on midterms it wasn't fit to</h3>${svg}</div>
         <div><h3>By year: kept carry-over vs the dropped fade</h3>${yr}
-          <div class="legend"><span class="lg"><i style="background:var(--dem)"></i>previous presidential miss (kept)</span><span class="lg"><i style="background:var(--ink-3)"></i>red-state fade (dropped)</span><span class="lg-cap">below the line = fewer points of miss</span></div></div></div>
-        <p class="sec-note">${M.races} Senate and governor races in ${M.cycles} midterm years (1998–2022). Each adjustment was fitted on every year but one and scored on the year left out. Only carrying over the state's previous presidential polling miss helped; its weight is ${M.weight.toFixed(2)} (90% range ${M.lo.toFixed(2)}–${M.hi.toFixed(2)} when whole years are resampled). It helped in 2010, 2014, 2018 and 2022 and hurt in 2002 and 2006. The other versions stay on the race panels as variations, to be scored against the results.</p>`;
+          <div class="legend"><span class="lg"><i style="background:var(--dem)"></i>presidential miss by direction (kept)</span><span class="lg"><i style="background:var(--ink-3)"></i>red-state fade (dropped)</span><span class="lg-cap">below the line = fewer points of miss</span></div></div></div>
+        <p class="sec-note">${M.races} Senate and governor races in ${M.cycles} midterm years (2002–2022). Each adjustment was fitted on every year but one and scored on the year left out. The kept carry-over uses ${(100 * M.weight_d).toFixed(0)}% when polls underrated Democrats (90% range ${(100 * M.lo_d).toFixed(0)}% to ${(100 * M.hi_d).toFixed(0)}%) and ${(100 * M.weight_r).toFixed(0)}% when they underrated Republicans (${(100 * M.lo_r).toFixed(0)}% to ${(100 * M.hi_r).toFixed(0)}%), beyond the national miss. Ranges resample whole years. Split this way it scores slightly better on the years left out, but those predictions came out about half a point too Democratic on average in both directions; the single 42% weight was within a tenth of a point. The carry-over helped in 2010, 2014, 2018 and 2022 and hurt in 2002 and 2006. The other versions stay on the race panels as variations, to be scored against the results.</p>`;
     }
 
     function setTab() { document.querySelectorAll('#office button').forEach(b => b.classList.toggle('on', b.dataset.o === state.office)); }

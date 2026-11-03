@@ -85,7 +85,7 @@ I tested it on the 2024 presidential count in seven states, replaying each one i
 
 ![The dashboard replaying the 2024 count, with its signal log](img/dashboard-replay-signals.png)
 
-The constraints decided which states it covers. Several states put their results behind bot checks, and I didn't try to get around any of them. Kansas is the clearest case. Its results site sits behind a Cloudflare check, so the tool never fetches it. A bookmark in my own browser sends the page I have open to the dashboard instead, and three county sites (Johnson, Sedgwick and Douglas, about 46% of the state's vote) back it up. Eight states, including Wisconsin, Arizona and Pennsylvania, have no usable feed at all, so those races move only with their prior and the national swing. Iowa, South Carolina and Texas still need their 2026 election ids, which their sites hadn't published when I wrote this.
+The constraints decided which states it covers. Several states put their results behind bot checks, and I didn't try to get around any of them. Kansas is the clearest case. Its results site sits behind a Cloudflare check, so the tool never fetches it. A bookmark in my own browser sends the page I have open to the dashboard instead, and three county sites (Johnson, Sedgwick and Douglas, about 46% of the state's vote) back it up. Eight states, including Wisconsin, Arizona and Pennsylvania, have no usable feed at all, so those races move only with their prior and the national swing. Iowa and South Carolina posted their 2026 election ids in the last few days before the election. Texas moved its results to a new site that blocks AI crawlers, so Texas comes from seven of its counties' own sites, about 40% of its vote.
 
 ## What I'll score after Tuesday
 

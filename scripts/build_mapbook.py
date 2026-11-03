@@ -69,13 +69,15 @@ def method():
     years = []
     for c in sorted(t["cycle"].unique()):
         tr, te = t[t["cycle"] != c], t[t["cycle"] == c]
-        bp = float((tr["pres"] * tr["y"]).sum() / (tr["pres"] ** 2).sum())
+        bp = np.linalg.lstsq(tr[["pres_d", "pres_r"]].to_numpy(float), tr["y"].to_numpy(float), rcond=None)[0]
         bf = float((tr["fade"] * tr["y"]).sum() / (tr["fade"] ** 2).sum())
         r = lambda e: float(np.sqrt(np.mean(e ** 2)))
-        years.append(dict(year=int(c), none=r(te["y"]), carry=r(te["y"] - bp * te["pres"]), fade=r(te["y"] - bf * te["fade"])))
-    b = CO.bootstrap(["pres"], 12)
-    return dict(races=len(t), cycles=int(t["cycle"].nunique()), weight=CO.BETA_PRES,
-                lo=float(b.loc["pres", "5%"]), hi=float(b.loc["pres", "95%"]),
+        # The two-series chart compares deployed split carry-over against fade.
+        years.append(dict(year=int(c), none=r(te["y"]), carry=r(te["y"] - te[["pres_d", "pres_r"]].to_numpy(float) @ bp), fade=r(te["y"] - bf * te["fade"])))
+    b = CO.bootstrap(["pres_d", "pres_r"], 12)
+    return dict(races=len(t), cycles=int(t["cycle"].nunique()), weight_d=CO.BETA_PRES_D, weight_r=CO.BETA_PRES_R,
+                lo_d=float(b.loc["pres_d", "5%"]), hi_d=float(b.loc["pres_d", "95%"]),
+                lo_r=float(b.loc["pres_r", "5%"]), hi_r=float(b.loc["pres_r", "95%"]),
                 scores=[dict(spec=r.spec, rmse=round(r.rmse, 3)) for r in s.itertuples()], years=years)
 
 

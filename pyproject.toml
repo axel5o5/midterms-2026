@@ -32,4 +32,5 @@ dev = [
     "jupyterlab>=4.6.5",
     "jupytext>=1.19.6",
     "nbconvert>=7.17.2",
+    "pytest>=9.2.0",
 ]

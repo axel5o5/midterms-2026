@@ -12,14 +12,17 @@ Hosts (format and past election each adapter was checked against):
 - GA  results.sos.ga.gov "Enhanced Voting" JSON, one request per county, vote
       groups per candidate. 2024NovGen. VA runs the same platform.
 - IA, SC (and CO)  Clarity ENR detail.xml zip, vote types per county.
-      IA 2024 general (EID 122322). SC parser checked on the 2024 detail.xml
-      sample; its 2026 EID isn't published yet.
+      IA 2024 general (EID 122322) and SC 2024 general (122436) match
+      county_baseline exactly; 2026 general ids IA 127077, SC 127300 (see
+      IA_EID_2026). Saved samples: data/reference/enr_samples/{IA,SC}/.
 - MN  electionresultsfiles.sos.mn.gov allracesbycounty.txt (semicolon).
       2024-11-05.
 - FL  flelectionfiles.floridados.gov ElecResultsFL.txt (county, no vote
       types). 2024-11-05; the 2026-11-03 placeholder exists.
-- TX  results.texas-election.com County.json (county FIPS keys; early votes
-      as EV). 2024 general id 49664.
+- TX  2026: county Clarity sites (feeds_tx), because the state's new results host
+      disallows AI crawlers. `tx()` reads the old host, results.texas-election.com
+      County.json (county FIPS keys; early votes as EV), for the 2024 general (id
+      49664); its election list stops at 2024.
 - OH  liveresults.ohiosos.gov NIST 1500-100 XML. Only a zero-vote test file
       has been seen; the parser is untested on real counts. The host 429s
       after a few requests: poll it at most every 2-3 minutes.
@@ -187,6 +190,14 @@ def _race(state: str, office: str) -> str | None:
     return None
 
 
+def _rel(p: Path) -> Path:
+    """A path as it reads from the repo root, for error messages."""
+    try:
+        return p.relative_to(ROOT)
+    except ValueError:
+        return p
+
+
 def _frame(rows: list[dict]) -> pd.DataFrame:
     df = pd.DataFrame(rows, columns=COLS)
     df["votes"] = pd.to_numeric(df["votes"], errors="coerce").fillna(0)
@@ -300,11 +311,40 @@ def clarity_xml(state: str, xml_bytes: bytes) -> pd.DataFrame:
     return _frame(rows)
 
 
-def clarity(state: str, eid: str | int) -> pd.DataFrame:
+def clarity_check_date(state: str, eid: str | int, xml_bytes: bytes, expect_date: str) -> None:
+    """Raise if the file's <ElectionDate> isn't `expect_date` (M/D/YYYY): a wrong or reused
+    id must stop the feed loudly instead of feeding another election's votes."""
+    root = ET.fromstring(xml_bytes)
+    got, name = (root.findtext("ElectionDate") or "").strip(), (root.findtext("ElectionName") or "").strip()
+    if not same_date(got, expect_date):
+        raise RuntimeError(f"{state} Clarity election {eid} is {name!r} dated {got!r}, not {expect_date}: "
+                           f"wrong id? set the right one in {_rel(FEED_IDS_FILE)}")
+
+
+def same_date(a: str, b: str) -> bool:
+    """'11/3/2026' == '11/03/2026' (Clarity's M/D/YYYY, with or without zero padding)."""
+    def parse(s):
+        try:
+            return dt.datetime.strptime(s.strip().split()[0], "%m/%d/%Y").date()
+        except (ValueError, IndexError):
+            return None
+    da = parse(a)
+    return da is not None and da == parse(b)
+
+
+def clarity(state: str, eid: str | int, expect_date: str | None = None) -> pd.DataFrame:
     host = CLARITY_HOSTS.get(state, CLARITY_HOSTS["default"])
     ver = fetch(f"{host}/{state}/{eid}/current_ver.txt").decode().strip()
     z = zipfile.ZipFile(io.BytesIO(fetch(f"{host}/{state}/{eid}/{ver}/reports/detailxml.zip", cache_name=f"{state}_{eid}_detailxml.zip")))
-    return clarity_xml(state, z.read("detail.xml"))
+    xml = z.read("detail.xml")
+    if expect_date:
+        clarity_check_date(state, eid, xml, expect_date)
+    df = clarity_xml(state, xml)
+    if expect_date and not (df["race"] == f"SEN-{state}").any():
+        # the right election but no Senate rows: Clarity changed the file's layout
+        raise RuntimeError(f"{state} Clarity election {eid}: no U.S. Senate rows by county in detail.xml "
+                           "(file layout changed?)")
+    return df
 
 
 # ---- Minnesota ----------------------------------------------------------------------
@@ -754,21 +794,41 @@ def ks(race_pattern: str = KS_RACE, candidates: dict[str, tuple[str, ...]] | Non
     return pd.concat(frames, ignore_index=True) if frames else _frame([])
 
 
-def _need(eid, what: str):
-    if eid is None:
-        raise RuntimeError(f"{what} 2026 election id not set yet (feeds.py)")
-    return eid
+# 2026 general-election ids, each live with zero votes and election date 11/3/2026 when checked:
+# IA  127077  results.enr.clarityelections.com/IA/elections.json lists "2026 General Election" (2026-11-02)
+# SC  127300  scvotes.gov's home page links it as "View Results for the 2026 Statewide General
+#             Election" (2026-11-02)
+# On the night, an id in data/live/feed_ids.json (e.g. {"IA": "127077"}) wins over these, so a
+# changed id needs no code edit; it is re-read on every call.
+IA_EID_2026: str | None = "127077"
+SC_EID_2026: str | None = "127300"
+ELECTION_DATE_2026 = "11/3/2026"
+FEED_IDS_FILE = ROOT / "data" / "live" / "feed_ids.json"
+
+
+def feed_id(state: str, default) -> str:
+    """The state's 2026 election id: data/live/feed_ids.json if it names one, else `default`.
+    Raises if neither is set, so the dashboard shows the feed as broken instead of quiet."""
+    try:
+        override = json.loads(FEED_IDS_FILE.read_text()).get(state)
+    except FileNotFoundError:
+        override = None
+    except (OSError, ValueError, AttributeError) as e:
+        raise RuntimeError(f"{_rel(FEED_IDS_FILE)} is unreadable: {e!r}") from e
+    eid = str(override).strip() if override not in (None, "") else default
+    if eid in (None, ""):
+        raise RuntimeError(f"{state} 2026 election id not set: put it in {_rel(FEED_IDS_FILE)}")
+    return str(eid)
 
 
 ADAPTERS = {
-    "NC": lambda: nc(), "GA": lambda: ga(), "IA": lambda: clarity("IA", _need(IA_EID_2026, "Iowa")),
-    "SC": lambda: clarity("SC", _need(SC_EID_2026, "South Carolina")), "MN": lambda: mn(), "FL": lambda: fl(),
-    "TX": lambda: tx(_need(TX_ID_2026, "Texas")), "OH": lambda: oh(), "KS": lambda: ks(),
+    "NC": lambda: nc(), "GA": lambda: ga(),
+    "IA": lambda: clarity("IA", feed_id("IA", IA_EID_2026), expect_date=ELECTION_DATE_2026),
+    "SC": lambda: clarity("SC", feed_id("SC", SC_EID_2026), expect_date=ELECTION_DATE_2026),
+    "MN": lambda: mn(), "FL": lambda: fl(),
+    # Texas's 2026 statewide host blocks AI crawlers (see feeds_tx), so TX is its Clarity counties
+    "TX": lambda: __import__("midterms.live.feeds_tx", fromlist=["tx_counties"]).tx_counties(),
+    "OH": lambda: oh(), "KS": lambda: ks(),
     "NE": lambda: __import__("midterms.live.feeds_ne", fromlist=["ne"]).ne(),
     "MI": lambda: __import__("midterms.live.feeds_mi", fromlist=["mi"]).mi(),
 }
-# Fill these in when the states publish them (Clarity lists end at the 2026 primary;
-# Texas's election list didn't have the 2026 general yet on 2026-10-29).
-IA_EID_2026: str | None = None
-SC_EID_2026: str | None = None
-TX_ID_2026: str | None = None

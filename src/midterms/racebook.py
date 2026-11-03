@@ -4,7 +4,7 @@ the data behind the map pages (scripts/build_mapbook.py and the live dashboard's
 One record per race (Senate "SEN-IA", House "IA-01", governor "GOV-IA"), every
 probability P(the Democrat, or the non-Republican, wins):
 - ours: Senate, the poll average blended with Split Ticket, plus the 2024 carry-over
-  (carryover.BETA_PRES, chosen by an out-of-sample backtest), simulated with
+  (carryover.BETA_PRES_D / BETA_PRES_R, chosen by an out-of-sample backtest), simulated with
   senate.ErrorModel, with the other carryover.VARIANTS alongside; House,
   house.districts()' center simulated with house.simulate. No governor model.
 - split_ticket, polls (Silver Bulletin average and 30-day poll count), kalshi and
@@ -247,9 +247,10 @@ def senate_reasoning(r: dict) -> dict:
     lines.append(f"Holdout averages the polls with Split Ticket: {_fmt_m(r['blend'])}.")
     co = r["ours_margin"] - r["blend"]
     if abs(co) >= 0.1:
-        lines.append(f"2024 carry-over {co:+.1f}: the state's 2024 presidential polls missed by {r['miss24_rel']:+.1f} beyond the "
-                     f"national miss, and about {100 * CO.BETA_PRES:.0f}% of that kind of miss has carried into the next midterm "
-                     f"(fitted on 1998-2022 midterms and tested one year at a time).")
+        weight = CO.BETA_PRES_D if r["miss24_rel"] > 0 else CO.BETA_PRES_R
+        party = "Democrats" if r["miss24_rel"] > 0 else "Republicans"
+        lines.append(f"2024 carry-over {co:+.1f}: polls underrated {party} by {abs(r['miss24_rel']):.1f} points "
+                     f"beyond the national miss; Holdout carries {100 * weight:.0f}% forward.")
     lines.append(f"Result: {_fmt_m(r['ours_margin'])} with an SD of {r['ours_sd']:.1f} points, so {_pct(r['ours'])} for the Democrat.")
     return dict(headline=_headline(r), lines=lines)
 

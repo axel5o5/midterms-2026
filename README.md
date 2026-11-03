@@ -11,16 +11,17 @@
 
 ## What Holdout says before Tuesday (2026-11-02)
 
-**Holdout gives Democrats a 77% chance of the Senate and 95% of the House, close to the markets on both chambers (Polymarket: Senate 79%, House 96%). It parts from the markets most in four Senate races. In Iowa (34% for the Democrat; Polymarket 49%), Kansas (52%; 62%) and Texas (68%; 76%) it is 8 to 15 points lower, and the gap comes from the one adjustment that survived an out-of-sample test: part of the state's 2024 presidential polling miss carries into 2026. In South Carolina it is 11 points higher (43%; 32%), because the polls and Split Ticket have the race closer than the market does. Iowa's 15 points come to under 2 points of margin: the race is close enough that a small shift moves the odds a lot.**
+**Holdout gives Democrats an 80% chance of the Senate and 95% of the House, close to the markets on both chambers (Polymarket: Senate 76%, House 95%). It parts from the markets most in two Senate races. In Iowa it is 11 points lower (40% for the Democrat; Polymarket 52%), and the gap comes from the one adjustment that survived an out-of-sample test: part of the state's 2024 presidential polling miss carries into 2026. In South Carolina it is 13 points higher (45%; 32%), because the polls and Split Ticket have the race closer than the market does. Kansas (59%; 62%) and Texas (72%; 74%) are within 3 points. Iowa's 11 points come to about 1.3 points of margin: the race is close enough that a small shift moves the odds a lot.**
 
-To see it: the [live map](https://axel5o5.github.io/midterms-2026/) has every race with each source's number, as of the 2026-11-02 morning snapshot and Polymarket's prices that afternoon; [notebook 04](notebooks/04_model_selection.ipynb) shows the test; [Kansas, Iowa, Texas](docs/special-cases-ks-ia-tx.md) works through the three carry-over races as of 2026-10-30, when Kansas stood at 39% (Split Ticket's 11-02 update moved it).
+To see it: the [live map](https://axel5o5.github.io/midterms-2026/) has every race with each source's number, as of the 2026-11-02 9pm ET snapshot and Polymarket's prices then; [notebook 04](notebooks/04_model_selection.ipynb) shows the test; [Kansas, Iowa, Texas](docs/special-cases-ks-ia-tx.md) works through the three carry-over races as of 2026-10-30, when Kansas stood at 39% (Split Ticket's 11-02 update moved it).
 
 ---
 
 - **Holdout keeps only what predicted out of sample** ([notebook 04](notebooks/04_model_selection.ipynb), `midterms.carryover`). Three state-level adjustments were each fitted on all midterm years but one and scored on the year left out, over 344 Senate and governor races (2002-2022).
   - Carrying over a share of the state's previous presidential polling miss cut the average held-out miss from 5.56 to 5.27 points. It helped in 2010, 2014, 2018 and 2022 and hurt in 2002 and 2006. Weight 0.42, 90% range 0.22-0.56.
+  - Since 2026-11-02 the weight is split by the direction of the 2024 miss: 0.54 when polls underrated Democrats (90% range 0.37-0.63) and 0.26 when they underrated Republicans (-0.02 to 0.48). Held-out miss 5.24. The split's held-out predictions come out about half a point too Democratic in both directions, against a tenth of a point for the single weight, which stays on the map as a variant.
   - The "red-state fade" (pulling candidates who poll far above their state's lean back toward it) scored 5.57, no better than the polls as they are. A longer state polling record helped a little on its own (5.51) but made things worse on top of the carry-over (5.35). Discounting misses built from few polls didn't help either.
-  - The versions that didn't pass stay on the map page as labelled variations of Holdout, to be scored after the results: its first version (fade plus a 0.34 carry-over, 68% Senate), the longer-record version (77%) and no adjustments (78%).
+  - The versions that didn't pass stay on the map page as labelled variations of Holdout, to be scored after the results: its first version (fade plus a 0.34 carry-over, 74% Senate), the single 0.42 weight (78%), the longer-record version (82%) and no adjustments (82%).
 
   ![Held-out polling miss for each adjustment against the polls as they are](docs/img/map-how-model-was-built.png)
 
@@ -71,13 +72,16 @@ Results feeds, each checked against its 2024 results. Files are checked every 15
 |---|---|---|
 | NC, FL, MN | state results files | all counties; 2026 files already live |
 | GA | state API | all counties, once its 2026 file posts |
-| IA, SC, TX | state results sites (Clarity, Texas) | need their 2026 election ids in `feeds.py` |
+| IA, SC | state results sites (Clarity) | all counties; 2026 files already live |
+| TX | Harris (its own results files) plus Dallas, Tarrant, Denton, Fort Bend, Williamson and El Paso (Clarity), with 2024 vote-type leans; Travis once it posts (the state's new results site blocks AI crawlers) | 40% of the 2024 vote |
 | OH | state XML | untested on real counts; rate-limits hard |
 | KS | **bookmark**: open the state results page in your browser and click "Send to dashboard" (the state site is behind a Cloudflare check, so the tool never fetches it); backup: Johnson, Sedgwick and Douglas counties | 105 counties; backup 46% of the 2024 vote |
 | MI | Oakland, Macomb, Genesee, Ottawa (Clarity) and Washtenaw, with 2024 vote-type leans | 34% of the 2024 vote |
 | NE | Secretary of State results site (turned on 2026-10-30; Osborn takes the non-Republican slot), plus Sarpy County (Clarity) | all 93 counties |
 
 No usable feed: WI, AZ, NH, NJ, NY, ME, AK, PA (state sites behind bot checks, statewide-only files, or no 2026 Senate race). Those races follow their prior plus the national swing.
+
+Before polls close, `uv run python scripts/feeds_2026_check.py` runs the IA, SC and TX feeds once against the live sites and exits 1 if any fails (a wrong id or a file for another election fails loudly). If a state's id changes on the night, put it in `data/live/feed_ids.json` (`{"IA": "<id>"}`) or a Texas county's in `data/live/tx_sources.json`; both are re-read on every check. `uv run pytest` runs the offline tests on saved official files.
 
 ## About this public copy
 

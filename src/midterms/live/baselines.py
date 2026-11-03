@@ -38,6 +38,7 @@ VOTE_TYPES = {
     "ADVANCE VOTING": "early", "ADVANCED VOTING": "early", "ADVANCE IN PERSON": "early",
     "ABSENTEE BY MAIL": "mail", "ABSENTEE": "mail", "MAIL": "mail", "MAIL VOTES": "mail", "MAIL-IN": "mail",
     "PROVISIONAL": "provisional", "PROVISIONAL VOTES": "provisional", "FAILSAFE": "provisional",
+    "PROVIONSAL": "provisional",   # sic, in SC's 2026 file
     "FAILSAFE PROVISIONAL": "provisional", "LATE VOTES": "provisional",
     "TOTAL": "total",
 }
@@ -130,21 +131,30 @@ def expected_vote(state: str, pace: float = 1.0) -> pd.DataFrame:
         b = county_baseline(state)
         out = pd.DataFrame({"fips": b["fips"], "vote_type": "total", "expected": 0.75 * pace * b["pres2024_total"],
                             "lean": 0.0, "share": 1.0})
-        # where a county's feed splits votes by type, use that type's 2024 lean and share
-        # (data/reference/vote_type_leans_2024.csv, measured from the counties' own 2024 files)
-        lp = REF / "vote_type_leans_2024.csv"
-        if lp.exists():
-            lv = pd.read_csv(lp, dtype={"fips": str})
-            lv = lv[lv["state"] == state]
-            if len(lv):
-                base = out.set_index("fips")["expected"]
-                split = lv.assign(expected=lv["fips"].map(base) * lv["share"])[["fips", "vote_type", "expected", "lean", "share"]]
-                out = pd.concat([out[~out["fips"].isin(lv["fips"])], split], ignore_index=True)
-        return out
+        return _measured_leans(state, out)
     tot = m.groupby("fips")[["dem", "rep", "total"]].sum()
     county_margin = 100 * (tot["dem"] - tot["rep"]) / tot["total"].where(tot["total"] > 0)
     m = m.assign(expected=pace * m["total"],
                  lean=100 * (m["dem"] - m["rep"]) / m["total"].where(m["total"] > 0) - m["fips"].map(county_margin),
                  share=m["total"] / m["fips"].map(tot["total"]))
     m.loc[m["vote_type"] == "total", "lean"] = 0.0
-    return m[["fips", "vote_type", "expected", "lean", "share"]].fillna({"lean": 0.0}).reset_index(drop=True)
+    out = m[["fips", "vote_type", "expected", "lean", "share"]].fillna({"lean": 0.0}).reset_index(drop=True)
+    return _measured_leans(state, out)
+
+
+def _measured_leans(state: str, out: pd.DataFrame) -> pd.DataFrame:
+    """Where a county has only a 'total' row (no 2022 breakdown, e.g. all of TX and MI) but its
+    feed splits votes by type, use each type's 2024 lean and share instead
+    (data/reference/vote_type_leans_2024.csv, measured from the counties' own 2024 files), so
+    a mail-first count doesn't read as a Democratic swing."""
+    lp = REF / "vote_type_leans_2024.csv"
+    if not lp.exists():
+        return out
+    lv = pd.read_csv(lp, dtype={"fips": str})
+    total_only = out.groupby("fips")["vote_type"].agg(lambda s: set(s) == {"total"})
+    lv = lv[(lv["state"] == state) & lv["fips"].map(total_only).fillna(False).astype(bool)]
+    if lv.empty:
+        return out
+    base = out[out["vote_type"] == "total"].set_index("fips")["expected"]
+    split = lv.assign(expected=lv["fips"].map(base) * lv["share"])[["fips", "vote_type", "expected", "lean", "share"]]
+    return pd.concat([out[~out["fips"].isin(lv["fips"])], split], ignore_index=True)

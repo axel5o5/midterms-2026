@@ -231,7 +231,7 @@ function renderSources(s) {
   const out = [];
   for (const f of s.feeds) {
     const cls = f.status === 'ok' ? 'ok' : f.status === 'error' ? 'err' : 'wait';
-    const what = f.status === 'error' ? esc(f.error || 'error') : f.votes ? `${Math.round(f.votes).toLocaleString()} votes · changed ${ago(f.last_change)}` : `no votes yet · checked ${ago(f.last_check)}`;
+    const what = f.status === 'error' ? esc(f.error || 'error') : (f.status === 'partial' ? esc(f.error || 'partial') + ' · ' : '') + (f.votes ? `${Math.round(f.votes).toLocaleString()} votes · changed ${ago(f.last_change)}` : `no votes yet · checked ${ago(f.last_check)}`);
     out.push(`<span class="chip" title="${esc(f.error || '')}"><i class="dot ${cls}"></i><b>${f.state}</b> ${what}</span>`);
   }
   for (const [v, m] of Object.entries(s.markets || {})) {

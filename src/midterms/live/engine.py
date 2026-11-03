@@ -131,7 +131,8 @@ class Engine:
                 df = fn()
                 h = hashlib.md5(pd.util.hash_pandas_object(df[["fips", "race", "party", "vote_type", "votes", "complete"]],
                                                            index=False).values.tobytes()).hexdigest() if len(df) else "empty"
-                st.update(status="ok", last_check=time.time(), rows=len(df), error=None,
+                warning = df.attrs.get("warning")   # e.g. a Texas county failing while the others read fine
+                st.update(status="partial" if warning else "ok", last_check=time.time(), rows=len(df), error=warning,
                           votes=float(df["votes"].sum()) if len(df) else 0.0)
                 if h != last_hash:
                     last_hash = h

@@ -1,0 +1,38 @@
+{
+  "_format": "county -> {\"clarity\": <eid or any results.enr.clarityelections.com/TX/<County>/<eid>/... URL>}, or for Harris {\"harris\": <election code>}; {\"clarity\": null} waits for an id, {\"skip\": true} leaves a county out. Read by midterms.live.feeds_tx.tx_counties() on every call, so an id pasted here on the night is picked up without a restart.",
+  "_checked": "2026-11-02: each 2026 id below has a live file with zero votes and election date 11/3/2026 (Clarity files: the county as their Region).",
+  "counties": {
+    "Dallas": {
+      "clarity": 127396,
+      "_where": "dallascountyvotes.org/election-results/historical/november-3-2026-general-and-joint-election/"
+    },
+    "Tarrant": {
+      "clarity": 127297,
+      "_where": "tarrantcountytx.gov/en/elections/current-election-information.html (votetarrant.com disallows AI crawlers and isn't used)"
+    },
+    "Denton": {
+      "clarity": 127398,
+      "_where": "results.enr.clarityelections.com/TX/Denton/elections.json: 2026 General Election"
+    },
+    "Fort Bend": {
+      "clarity": "https://results.enr.clarityelections.com/TX/Fort_Bend/127480/",
+      "_where": "fortbendcountytx.gov/government/departments/elections-voter-registration/2026-election-results"
+    },
+    "Williamson": {
+      "clarity": 127488,
+      "_where": "results.enr.clarityelections.com/TX/Williamson/elections.json: November 3, 2026 Joint General & Special Elections"
+    },
+    "El Paso": {
+      "clarity": 127348,
+      "_where": "results.enr.clarityelections.com/TX/El_Paso/elections.json: NOVEMBER 2026 GENERAL ELECTION"
+    },
+    "Travis": {
+      "clarity": null,
+      "_where": "on Clarity (2024 general was 122432), but neither its elections.json nor votetravis.gov's results page names the 2026 general yet (2026-11-02): paste the id when it appears"
+    },
+    "Harris": {
+      "harris": 1126,
+      "_where": "app.harrisvotes.com/electionresults/electionday (electionCode '1126'), linked from harrisvotes.com/Election-Results/Live-Results; file appfiles.harrisvotes.com/harrisvotes/prd/Data/1126/resultsbyballot.json, dated November 03, 2026. 2024 general was 1124."
+    }
+  }
+}
